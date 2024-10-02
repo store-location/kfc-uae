@@ -439,10 +439,8 @@
             .setContent('<b>Welcome to KFC UAE!</b><br>Click "Find Nearest Store" to locate the nearest KFC.')
             .openOn(map);
 
-        // Smooth map interaction
-        map.scrollWheelZoom.enable();
 
-           function getLocation() {
+       function getLocation() {
     if (navigator.geolocation) {
         if (isSafari()) {
             const userConsent = confirm("This site needs your location to find the nearest store. Please allow location access in the popup.");
@@ -492,15 +490,15 @@ function handleLocationError(error) {
             let nearestStore = null;
             let minDistance = Infinity;
             stores.forEach(store => {
-                const distance = getDistance(userLat, userLng, store.Latitude, store.Longitude);
+                const distance = getDistance(userLat, userLng, store.lat, store.lng);
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearestStore = store;
                 }
             });
             if (nearestStore) {
-                alert(`The nearest store is: ${nearestStore.Location}`);
-                window.open(nearestStore.URL, "_blank");
+        alert(`The nearest store is: ${nearestStore.name}`);
+        window.open(nearestStore.url, "_blank");
             }
         }
         function getDistance(lat1, lng1, lat2, lng2) {
