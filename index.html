@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KFC Stores UAE</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Friz Quadrata', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f4f4f4 30%, #ffffff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            animation: fadeIn 2s ease-in-out forwards;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background-color: #ffffffd9;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        h1 {
+            color: #d62300;
+            font-size: 2.5em;
+            margin: 0;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: slideInFromTop 1s forwards ease-in-out 1s;
+        }
+
+        #nearest-store-button {
+            padding: 12px 24px;
+            background-color: #d62300;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.4s, transform 0.4s;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: slideInFromTop 1s forwards ease-in-out 1.8s, pulseButton 2s infinite ease-in-out 2.5s;
+        }
+
+        #nearest-store-button:hover {
+            background-color: #ff6347;
+            transform: scale(1.15) rotate(-2deg);
+        }
+
+        #map {
+            flex-grow: 1;
+            width: 90%;
+            height: 80%;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: scale(0.9);
+            animation: mapZoomIn 1.2s forwards ease-in-out 1.5s;
+            border: 5px solid transparent;
+            transition: border 1s ease-in-out;
+        }
+
+        #map:hover {
+            transform: scale(1.03);
+            border: 5px solid #ff6347;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            #nearest-store-button {
+                padding: 10px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6em;
+            }
+
+            #nearest-store-button {
+                padding: 8px 16px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes mapZoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulseButton {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounceMarker {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KFC Stores UAE</h1>
+        <button id="nearest-store-button" onclick="getLocation()">Find Nearest Store</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Custom KFC pin icon
+        const kfcIcon = L.icon({
+            iconUrl: 'https://global.kfc.com/images/logo.svg', // Correct icon URL or local path
+            iconSize: [38, 45],
+            iconAnchor: [22, 45],
+            popupAnchor: [-3, -76]
+        });
+
+        // Store locations
+        const stores = [
+    {
+        "name": "DUBAI MALL KFC",
+        "lat": 25.19710603,
+        "lng": 55.27667723,
+        "url": "https://www.google.com/maps?q=25.19710603,55.27667723"
+    },
+    {
+        "name": "RIQQA KFC",
+        "lat": 25.265637,
+        "lng": 55.32002785,
+        "url": "https://www.google.com/maps?q=25.265637,55.32002785"
+    },
+    {
+        "name": "DUBAI MALL FASHION AVENUE KFC",
+        "lat": 25.19710666,
+        "lng": 55.27667667,
+        "url": "https://www.google.com/maps?q=25.19710666,55.27667667"
+    },
+    {
+        "name": "JAMAL ABDUL NASER KFC",
+        "lat": 25.32423299,
+        "lng": 55.39088793,
+        "url": "https://www.google.com/maps?q=25.32423299,55.39088793"
+    },
+    {
+        "name": "DUBAI AIRPORT TERMINAL 2 KFC",
+        "lat": 25.26619729,
+        "lng": 55.35677758,
+        "url": "https://www.google.com/maps?q=25.26619729,55.35677758"
+    },
+    {
+        "name": "BUHAIRA CORNICHE KFC",
+        "lat": 25.33793463,
+        "lng": 55.38674609,
+        "url": "https://www.google.com/maps?q=25.33793463,55.38674609"
+    },
+    {
+        "name": "DUBAI HILLS MALL",
+        "lat": 25.10025014,
+        "lng": 55.24005469,
+        "url": "https://www.google.com/maps?q=25.10025014,55.24005469"
+    },
+    {
+        "name": "SIYAHI ABU DHABI / TOURISTIC KFC",
+        "lat": 24.49701166,
+        "lng": 54.37812894,
+        "url": "https://www.google.com/maps?q=24.49701166,54.37812894"
+    },
+    {
+        "name": "DUBAI / SHARJAH(DRIVE THRU) KFC",
+        "lat": 25.31271139,
+        "lng": 55.44800387,
+        "url": "https://www.google.com/maps?q=25.31271139,55.44800387"
+    },
+    {
+        "name": "DUBAI AIRPORT TERMINAL 1 (CONCOURSE D) KFC",
+        "lat": 25.2528385,
+        "lng": 55.35379159,
+        "url": "https://www.google.com/maps?q=25.2528385,55.35379159"
+    },
+    {
+        "name": "CAFETERIA / AIRPORT GARDEN KFC",
+        "lat": 24.42261728,
+        "lng": 54.6467533,
+        "url": "https://www.google.com/maps?q=24.42261728,54.6467533"
+    },
+    {
+        "name": "AJMAN CORNICHE RELO KFC",
+        "lat": 25.4051123,
+        "lng": 55.43048239,
+        "url": "https://www.google.com/maps?q=25.4051123,55.43048239"
+    },
+    {
+        "name": "UMM SEQUEIM KFC",
+        "lat": 25.17318212,
+        "lng": 55.21822984,
+        "url": "https://www.google.com/maps?q=25.17318212,55.21822984"
+    },
+    {
+        "name": "AL KHAIL GATE KFC",
+        "lat": 25.14267183,
+        "lng": 55.24999734,
+        "url": "https://www.google.com/maps?q=25.14267183,55.24999734"
+    },
+    {
+        "name": "AL DIYAFAH / JUMEIRA KFC",
+        "lat": 25.23573618,
+        "lng": 55.27720394,
+        "url": "https://www.google.com/maps?q=25.23573618,55.27720394"
+    },
+    {
+        "name": "CITY CENTER DEIRA KFC",
+        "lat": 25.25178195,
+        "lng": 55.33294183,
+        "url": "https://www.google.com/maps?q=25.25178195,55.33294183"
+    },
+    {
+        "name": "IBN BATTUTA / THE GARDENS MALL KFC",
+        "lat": 25.04282294,
+        "lng": 55.11879271,
+        "url": "https://www.google.com/maps?q=25.04282294,55.11879271"
+    },
+    {
+        "name": "EMIRATES MALL EAST WING KFC",
+        "lat": 25.11755487,
+        "lng": 55.20010386,
+        "url": "https://www.google.com/maps?q=25.11755487,55.20010386"
+    },
+    {
+        "name": "SOUQ EXTRA DSO KFC",
+        "lat": 25.11981314,
+        "lng": 55.39581104,
+        "url": "https://www.google.com/maps?q=25.11981314,55.39581104"
+    },
+    {
+        "name": "BAY AVENUE KFC",
+        "lat": 25.189499,
+        "lng": 55.2630554,
+        "url": "https://www.google.com/maps?q=25.189499,55.2630554"
+    },
+    {
+        "name": "EMIRATES MALL WEST WING KFC",
+        "lat": 25.11755536,
+        "lng": 55.20010398,
+        "url": "https://www.google.com/maps?q=25.11755536,55.20010398"
+    },
+    {
+        "name": "ENOC 1077 JVC KFC",
+        "lat": 25.06265046,
+        "lng": 55.20443069,
+        "url": "https://www.google.com/maps?q=25.06265046,55.20443069"
+    },
+    {
+        "name": "KHALIDIYA KFC",
+        "lat": 24.47047864,
+        "lng": 54.35273882,
+        "url": "https://www.google.com/maps?q=24.47047864,54.35273882"
+    },
+    {
+        "name": "MIRDIFF CITY CENTER FD111 NORTH FC KFC",
+        "lat": 25.21573754,
+        "lng": 55.40763092,
+        "url": "https://www.google.com/maps?q=25.21573754,55.40763092"
+    },
+    {
+        "name": "MOHEBI KARAMA KFC",
+        "lat": 25.24897175,
+        "lng": 55.30608257,
+        "url": "https://www.google.com/maps?q=25.24897175,55.30608257"
+    },
+    {
+        "name": "JUMEIRA BEACH RESIDENCE (JBR) KFC",
+        "lat": 25.07427074,
+        "lng": 55.13074111,
+        "url": "https://www.google.com/maps?q=25.07427074,55.13074111"
+    },
+    {
+        "name": "BURJUMAN KFC",
+        "lat": 25.25443442,
+        "lng": 55.30309198,
+        "url": "https://www.google.com/maps?q=25.25443442,55.30309198"
+    },
+    {
+        "name": "SHAHAMA KFC",
+        "lat": 24.54715223,
+        "lng": 54.68611364,
+        "url": "https://www.google.com/maps?q=24.54715223,54.68611364"
+    },
+    {
+        "name": "DUBAI FESTIVAL CITY KFC (REL)",
+        "lat": 25.22266497,
+        "lng": 55.35181122,
+        "url": "https://www.google.com/maps?q=25.22266497,55.35181122"
+    },
+    {
+        "name": "AL MIRQAB / AJMAN KFC (REL)",
+        "lat": 25.3877882,
+        "lng": 55.41869324,
+        "url": "https://www.google.com/maps?q=25.3877882,55.41869324"
+    },
+    {
+        "name": "ABU KADRA EMARAT GAS STATION KFC",
+        "lat": 25.19225271,
+        "lng": 55.30911514,
+        "url": "https://www.google.com/maps?q=25.19225271,55.30911514"
+    },
+    {
+        "name": "RAS AL KHAIMA KFC",
+        "lat": 25.75406165,
+        "lng": 55.91093619,
+        "url": "https://www.google.com/maps?q=25.75406165,55.91093619"
+    },
+    {
+        "name": "INTERNATIONAL CITY KFC",
+        "lat": 25.15866717,
+        "lng": 55.40449851,
+        "url": "https://www.google.com/maps?q=25.15866717,55.40449851"
+    },
+    {
+        "name": "AJMAN MALL KFC",
+        "lat": 25.38925183,
+        "lng": 55.46346129,
+        "url": "https://www.google.com/maps?q=25.38925183,55.46346129"
+    },
+    {
+        "name": "ZAHIA CITY CENTER",
+        "lat": 25.31503188,
+        "lng": 55.45497072,
+        "url": "https://www.google.com/maps?q=25.31503188,55.45497072"
+    },
+    {
+        "name": "MUROOR KFC (REL)",
+        "lat": 24.44518501,
+        "lng": 54.40345657,
+        "url": "https://www.google.com/maps?q=24.44518501,54.40345657"
+    },
+    {
+        "name": "KHALIFA B KFC",
+        "lat": 24.35685731,
+        "lng": 54.61472074,
+        "url": "https://www.google.com/maps?q=24.35685731,54.61472074"
+    },
+    {
+        "name": "CORNICHE KFC",
+        "lat": 25.27812669,
+        "lng": 55.30836354,
+        "url": "https://www.google.com/maps?q=25.27812669,55.30836354"
+    },
+    {
+        "name": "AL BARSHA KFC",
+        "lat": 25.11507625,
+        "lng": 55.20627932,
+        "url": "https://www.google.com/maps?q=25.11507625,55.20627932"
+    },
+    {
+        "name": "KUWAIT KFC",
+        "lat": 25.35870024,
+        "lng": 55.40514292,
+        "url": "https://www.google.com/maps?q=25.35870024,55.40514292"
+    }
+];
+
+        // Initialize map
+        const map = L.map('map').setView([25.1971068, 55.276678], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Add markers with bounce effect
+        stores.forEach(store => {
+            const marker = L.marker([store.lat, store.lng], { icon: kfcIcon }).addTo(map)
+                .bindPopup(`<strong style="color: #d62300; font-size: 1.2em;">${store.name}</strong><br><a href="${store.url}" target="_blank" style="color: #007bff;">Open in Google Maps</a>`);
+            marker._icon.style.animation = "bounceMarker 1s ease-out";
+        });
+
+        // Welcome popup
+        const welcomePopup = L.popup()
+            .setLatLng([25.1971068, 55.276678])
+            .setContent('<b>Welcome to KFC UAE!</b><br>Click "Find Nearest Store" to locate the nearest KFC.')
+            .openOn(map);
+
+        // Smooth map interaction
+        map.scrollWheelZoom.enable();
+
+           function getLocation() {
+    if (navigator.geolocation) {
+        if (isSafari()) {
+            const userConsent = confirm("This site needs your location to find the nearest store. Please allow location access in the popup.");
+            if (userConsent) {
+                navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            }
+        } else {
+            navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        }
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+function isSafari() {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+function handleLocationError(error) {
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            alert("User denied the request for Geolocation.");
+            break;
+        case error.POSITION_UNAVAILABLE:
+            alert("Location information is unavailable.");
+            break;
+        case error.TIMEOUT:
+            alert("The request to get user location timed out.");
+            break;
+        case error.UNKNOWN_ERROR:
+            alert("An unknown error occurred.");
+            break;
+    }
+}
+
+        function showNearestStore(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            let nearestStore = null;
+            let minDistance = Infinity;
+            stores.forEach(store => {
+                const distance = getDistance(userLat, userLng, store.Latitude, store.Longitude);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestStore = store;
+                }
+            });
+            if (nearestStore) {
+                alert(`The nearest store is: ${nearestStore.Location}`);
+                window.open(nearestStore.URL, "_blank");
+            }
+        }
+        function getDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Radius of the Earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLng = deg2rad(lng2 - lng1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c; // Distance in km
+            return distance;
+        }
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+    </script>
+</body>
+</html>
