@@ -160,14 +160,16 @@
     </style>
 </head>
 <body>
-    <h1>KFC Stores UAE</h1>
-    <div id="map"></div>
+<div class="header">
+        <h1>KFC Stores UAE</h1>
+    </div>
     <button id="nearest-store-button" onclick="getLocation()">Find Nearest Store</button>
+    <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Custom KFC pin icon
-        const aldoIcon = L.icon({
-            iconUrl: 'https://global.kfc.com/images/logo.svg', // Updated with the local path to your uploaded image
+        const kfcIcon = L.icon({
+            iconUrl: 'https://global.kfc.com/images/logo.svg', // Correct icon URL or local path
             iconSize: [38, 45],
             iconAnchor: [22, 45],
             popupAnchor: [-3, -76]
