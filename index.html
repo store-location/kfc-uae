@@ -426,11 +426,9 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Add markers with bounce effect
         stores.forEach(store => {
-            const marker = L.marker([store.lat, store.lng], { icon: kfcIcon }).addTo(map)
-                .bindPopup(`<strong style="color: #d62300; font-size: 1.2em;">${store.name}</strong><br><a href="${store.url}" target="_blank" style="color: #007bff;">Open in Google Maps</a>`);
-            marker._icon.style.animation = "bounceMarker 1s ease-out";
+            const marker = L.marker([store.Latitude, store.Longitude], { icon: aldoIcon }).addTo(map)
+                .bindPopup(`<strong style="color: #d62300; font-size: 1.2em;">${store.Location}</strong><br><a href="${store.URL}" target="_blank" style="color: #007bff;">Open in Google Maps</a>`);
         });
 
         // Welcome popup
