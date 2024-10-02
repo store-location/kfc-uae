@@ -168,6 +168,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        
         // Custom KFC pin icon
         const kfcIcon = L.icon({
             iconUrl: 'https://global.kfc.com/images/logo.svg', // Correct icon URL or local path
@@ -420,17 +421,19 @@
     }
 ];
 
-        // Initialize map
+// Initialize map
         const map = L.map('map').setView([25.1971068, 55.276678], 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            maxZoom: 18,
         }).addTo(map);
 
-        // Add markers with bounce effect
+       // Add store markers to the map
         stores.forEach(store => {
-            const marker = L.marker([store.lat, store.lng], { icon: kfcIcon }).addTo(map)
-                .bindPopup(`<strong style="color: #d62300; font-size: 1.2em;">${store.name}</strong><br><a href="${store.url}" target="_blank" style="color: #007bff;">Open in Google Maps</a>`);
-            marker._icon.style.animation = "bounceMarker 1s ease-out";
+            const marker = L.marker([store.lat, store.lng], { icon: kfcIcon })
+                .addTo(map)
+                .bindPopup(`<b>${store.name}</b><br><a href="${store.url}" target="_blank">Get Directions</a>`);
+            marker.on('mouseover', function () {
+                this.openPopup();
         });
 
 // Welcome popup with increased size
@@ -442,49 +445,49 @@ const welcomePopup = L.popup()
         // Smooth map interaction
         map.scrollWheelZoom.enable();
 
-        function getLocation() {
-    if (navigator.geolocation) {
-        if (isSafari()) {
-            const userConsent = confirm("This site needs your location to find the nearest store. Please allow location access in the popup.");
-            if (userConsent) {
-                navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                });
+function getLocation() {
+            if (navigator.geolocation) {
+                if (isSafari()) {
+                    const userConsent = confirm("This site needs your location to find the nearest store. Please allow location access in the popup.");
+                    if (userConsent) {
+                        navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    }
+                } else {
+                    navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                }
+            } else {
+                alert("Geolocation is not supported by this browser.");
             }
-        } else {
-            navigator.geolocation.getCurrentPosition(showNearestStore, handleLocationError, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
         }
-    } else {
-        alert("Geolocation is not supported by this browser.");
-    }
-}
 
-function isSafari() {
-    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-}
+        function isSafari() {
+            return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        }
 
-function handleLocationError(error) {
-    switch(error.code) {
-        case error.PERMISSION_DENIED:
-            alert("User denied the request for Geolocation.");
-            break;
-        case error.POSITION_UNAVAILABLE:
-            alert("Location information is unavailable.");
-            break;
-        case error.TIMEOUT:
-            alert("The request to get user location timed out.");
-            break;
-        case error.UNKNOWN_ERROR:
-            alert("An unknown error occurred.");
-            break;
-    }
-}
+        function handleLocationError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
 
         function showNearestStore(position) {
             const userLat = position.coords.latitude;
@@ -503,6 +506,7 @@ function handleLocationError(error) {
                 window.open(nearestStore.URL, "_blank");
             }
         }
+
         function getDistance(lat1, lng1, lat2, lng2) {
             const R = 6371; // Radius of the Earth in km
             const dLat = deg2rad(lat2 - lat1);
@@ -514,9 +518,14 @@ function handleLocationError(error) {
             const distance = R * c; // Distance in km
             return distance;
         }
+
         function deg2rad(deg) {
             return deg * (Math.PI / 180);
         }
     </script>
+</head>
+<body>
+    <h1>Find the Nearest Store</h1>
+    <button onclick="getLocation()">Find Nearest Store</button>
 </body>
 </html>
